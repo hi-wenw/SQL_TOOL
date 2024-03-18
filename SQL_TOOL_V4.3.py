@@ -335,6 +335,22 @@ def dws_create_table():
 
 
 @auto_copy
+def dws_create_internal_table():
+    sql = ""
+    try:
+        database_name, table_name = table_entry.get().split('.')
+    except ValueError:
+        sql += f'-- @@@@@ 未输入数据库名, 默认yishou_data库\n{"-" * 100}\n\n'
+        database_name, table_name = ['yishou_data', table_entry.get()]
+    sql += f"""-- {"*" * 10}分区表建表语句{"*" * 10}\nCREATE TABLE if not exists {database_name}.{table_name}(\n\t`字段名0` character varying,\n\t`字段名1` double precision,\n\t`字段名2` BIGINT,\n\t`字段名3` text,\n\t`dt` date\n) WITH (\norientation=column, \ncompression=low, \ncolversion=2.0, \nttl='5 years', \nperiod='1 days', \nenable_delta=false\n) \nDISTRIBUTE BY HASH(哈希字段) \nPARTITION BY RANGE (dt) ;"""
+    sql += f"""\n\n\n\n{"-" * 100}\n-- {"*" * 10}普通表建表语句{"*" * 10}\nCREATE TABLE if not exists {database_name}.{table_name}(\n\t`字段名0` character varying,\n\t`字段名1` double precision,\n\t`字段名2` BIGINT,\n\t`字段名3` text\n) WITH (\norientation=column, \ncompression=low, \ncolversion=2.0, \nenable_delta=false\n) \nDISTRIBUTE BY HASH(哈希字段) ;"""
+    text.delete("1.0", END)
+    text.insert(END, sql)
+    convert_keywords("upper")
+    label.config(text="已生成内部表建表语句")
+
+
+@auto_copy
 def create_external_sql():
     sql = ""
     try:
@@ -522,8 +538,11 @@ def table_method_page():
     dws_create_table_button = Button(table_frame, text='DWS跨源表建表', command=dws_create_table)
     dws_create_table_button.grid(row=6, column=1, pady=10, sticky=E)
     # 笛卡尔积判断
-    dws_create_table_button = Button(table_frame, text='笛卡尔积判断', command=join_judge)
+    dws_create_table_button = Button(table_frame, text='笛卡尔积判断(有bug)', command=join_judge)
     dws_create_table_button.grid(row=7, column=0, pady=10, sticky=E)
+    # 笛卡尔积判断
+    dws_create_table_button = Button(table_frame, text='DWS内部表建表', command=dws_create_internal_table)
+    dws_create_table_button.grid(row=7, column=1, pady=10, sticky=E)
 
 
 if __name__ == '__main__':
